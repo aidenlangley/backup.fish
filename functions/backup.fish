@@ -266,15 +266,13 @@ function backup --description 'Quickly create backups of files & directories'
 end
 
 function _log --description 'Log messages (Levels: ERR, INF, WARN, DEBUG, OK, QUESTION)'
-    # Nice date format if we want to use it.
-    # printf '[%s]' (date --iso-8601=seconds)
-    # printf '[%s]' (date +'%H:%M:%S.%N')
-    # $argv[2..-1]
+    if functions -q log
+        log $argv && return
+    end
 
     set opts (fish_opt --short d --long debug)
     set opts $opts (fish_opt --short l --long level --required-val)
     set opts $opts (fish_opt --short t --long timestamp)
-
     argparse $opts -- $argv
 
     set --query _flag_d && set debug $_flag_d
@@ -306,8 +304,11 @@ function _log --description 'Log messages (Levels: ERR, INF, WARN, DEBUG, OK, QU
 end
 
 function _user_confirm --description 'Prompt user to confirm or cancel'
-    set opts (fish_opt --short y --long yes --optional-val)
+    if functions -q user_confirm
+        user_confirm $argv && return
+    end
 
+    set opts (fish_opt --short y --long yes --optional-val)
     argparse $opts -- $argv
 
     if set --query _flag_y
