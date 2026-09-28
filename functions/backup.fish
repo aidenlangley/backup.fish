@@ -1,6 +1,6 @@
 function backup --description 'Quickly create backups of files & directories'
     set __name (string split '.' (basename (status -f)))[1]
-    set __version '0.1.1'
+    set __version '0.1.3'
     set __description 'Quickly create backups of files & directories'
 
     set opts (fish_opt --short h --long help)
@@ -110,6 +110,66 @@ function backup --description 'Quickly create backups of files & directories'
         || set ext $default_ext
 
     set --query debug && set --show datetime_format ext
+
+    function _log --description 'Log messages (Levels: ERR, INF, WARN, DEBUG, OK, QUESTION)'
+        if functions -q log
+            log $argv && return
+        end
+
+        set opts (fish_opt --short l --long level --required-val)
+        set opts $opts (fish_opt --short t --long timestamp)
+        argparse $opts -- $argv
+
+        set msg
+        if set --query _flag_t
+            set msg (set_color -d)(printf '[%s]' (date +'%H:%M:%S.%N'))(set_color --reset)
+        end
+
+        set --query _flag_l && set level $_flag_l
+        switch $level
+            case dbg debug DBG DEBUG
+                set msg $msg (set_color -o cyan)DBG(set_color --reset) $argv
+            case inf info INF INFO
+                set msg $msg (set_color --bold --dim white)INF(set_color --reset) $argv
+            case wrn warn WRN WARN
+                set msg $msg (set_color -o yellow)WARN(set_color --reset) $argv
+            case err error ERR ERROR
+                set msg $msg (set_color -o red)ERR(set_color --reset) $argv
+            case ok OK
+                set msg $msg (set_color -o green)OK(set_color --reset) $argv
+            case question QUESTION
+                set msg $msg (set_color -o cyan)'???'(set_color --reset) $argv
+            case '*'
+                set msg $msg $argv
+        end
+
+        echo $msg
+    end
+
+    function _user_confirm --description 'Prompt user to confirm or cancel'
+        set opts (fish_opt --short y --long yes --optional-val)
+        argparse $opts -- $argv
+
+        if set --query _flag_y
+            set default_choice '[Y/n]'
+            set yes '' y y
+            set no n n
+        else
+            set default_choice '[y/N]'
+            set no '' n n
+            set yes y y
+        end
+
+        while true
+            read --prompt-str "$argv[1] $default_choice" confirm
+            switch $confirm
+                case $yes
+                    return 0
+                case $no
+                    return 1
+            end
+        end
+    end
 
     for arg in $argv
         if set --query verbose && set --query interactive
@@ -261,73 +321,6 @@ function backup --description 'Quickly create backups of files & directories'
 
         if not set --query quiet
             _log --level OK "Backup complete! "(set_color -o yellow)$arg(set_color --reset)' -> '(set_color -o)$new_fname(set_color --reset)
-        end
-    end
-end
-
-function _log --description 'Log messages (Levels: ERR, INF, WARN, DEBUG, OK, QUESTION)'
-    if functions -q log
-        log $argv && return
-    end
-
-    set opts (fish_opt --short d --long debug)
-    set opts $opts (fish_opt --short l --long level --required-val)
-    set opts $opts (fish_opt --short t --long timestamp)
-    argparse $opts -- $argv
-
-    set --query _flag_d && set debug $_flag_d
-
-    set msg
-    if set --query _flag_t
-        set msg (set_color -d)(printf '[%s]' (date +'%H:%M:%S.%N'))(set_color --reset)
-    end
-
-    set --query _flag_l && set level $_flag_l
-    switch $level
-        case dbg debug DBG DEBUG
-            set msg $msg (set_color -o cyan)DBG(set_color --reset) $argv
-        case inf info INF INFO
-            set msg $msg (set_color --bold --dim white)INF(set_color --reset) $argv
-        case wrn warn WRN WARN
-            set msg $msg (set_color -o yellow)WARN(set_color --reset) $argv
-        case err error ERR ERROR
-            set msg $msg (set_color -o red)ERR(set_color --reset) $argv
-        case ok OK
-            set msg $msg (set_color -o green)OK(set_color --reset) $argv
-        case question QUESTION
-            set msg $msg (set_color -o cyan)'???'(set_color --reset) $argv
-        case '*'
-            set msg $msg $argv
-    end
-
-    echo $msg
-end
-
-function _user_confirm --description 'Prompt user to confirm or cancel'
-    if functions -q user_confirm
-        user_confirm $argv && return
-    end
-
-    set opts (fish_opt --short y --long yes --optional-val)
-    argparse $opts -- $argv
-
-    if set --query _flag_y
-        set default_choice '[Y/n]'
-        set yes '' y y
-        set no n n
-    else
-        set default_choice '[y/N]'
-        set no '' n n
-        set yes y y
-    end
-
-    while true
-        read --prompt-str "$argv[1] $default_choice" confirm
-        switch $confirm
-            case $yes
-                return 0
-            case $no
-                return 1
         end
     end
 end
