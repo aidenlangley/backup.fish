@@ -47,7 +47,7 @@ function backup --description 'Quickly create backups of files & directories'
 
         echo
         echo (set_color --bold green)'Usage:'(set_color --reset)
-        echo $TAB(_usage '[OPTIONS] [ARGS]...')
+        echo $TAB(_usage '[OPTIONS] [ARGS] ...')
         echo $TAB(_usage '-f/--format_datetime -%s [ARGS]...')
         echo $TAB$TAB (_desc 'Format the datetime to your liking - %s for epoch ('(date +%s)'), see man date for more'.)
         echo $TAB(_usage '-d/--dest archive [ARGS]...')
